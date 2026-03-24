@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { MOODS, type MoodType } from '@/lib/moods'
+import { MOODS, normalizeMood } from '@/lib/moods'
 import type { MoodEntry } from '@/lib/supabase'
 
 interface MoodChartProps {
@@ -15,26 +15,30 @@ export default function MoodChart({ entries }: MoodChartProps) {
     return [...entries]
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
       .slice(-14)
-      .map((entry) => ({
-        date: new Date(entry.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }),
-        intensity: entry.intensity,
-        mood: entry.mood,
-        emoji: MOODS[entry.mood as MoodType]?.emoji || '😐',
-        color: MOODS[entry.mood as MoodType]?.color || '#C0C0C0',
-      }))
+      .map((entry) => {
+        const moodKey = normalizeMood(entry.mood)
+        const mood = MOODS[moodKey]
+        return {
+          date: new Date(entry.created_at).toLocaleDateString('hr', { month: 'short', day: 'numeric' }),
+          intensity: entry.intensity,
+          mood: entry.mood,
+          label: mood?.label || 'Okej',
+          color: mood?.color || '#94A3B8',
+        }
+      })
   }, [entries])
 
   if (!data) {
     return (
-      <div className="flex items-center justify-center h-48 bg-white/50 rounded-2xl border border-gray-100">
-        <p className="text-gray-400 text-sm">Add at least 2 entries to see trends</p>
+      <div className="flex items-center justify-center h-48 bg-white/50 rounded-2xl">
+        <p className="text-gray-400 text-sm">Dodaj barem 2 unosa za prikaz trenda</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-100">
-      <h3 className="text-sm font-semibold text-gray-600 mb-3">Mood Trend</h3>
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4">
+      <h3 className="text-sm font-semibold text-gray-600 mb-3">Trend raspoloženja</h3>
       <ResponsiveContainer width="100%" height={200}>
         <AreaChart data={data}>
           <defs>
@@ -51,8 +55,8 @@ export default function MoodChart({ entries }: MoodChartProps) {
               const d = payload[0].payload
               return (
                 <div className="bg-white shadow-lg rounded-xl px-3 py-2 border border-gray-100">
-                  <p className="text-sm font-medium">{d.emoji} {d.date}</p>
-                  <p className="text-xs text-gray-500">Intensity: {d.intensity}/10</p>
+                  <p className="text-sm font-medium">{d.label} - {d.date}</p>
+                  <p className="text-xs text-gray-500">Intenzitet: {d.intensity}/10</p>
                 </div>
               )
             }}
@@ -64,11 +68,9 @@ export default function MoodChart({ entries }: MoodChartProps) {
             strokeWidth={2}
             fill="url(#colorIntensity)"
             dot={(props: Record<string, unknown>) => {
-              const { cx, cy, payload } = props as { cx: number; cy: number; payload: { emoji: string } }
+              const { cx, cy, payload } = props as { cx: number; cy: number; payload: { color: string } }
               return (
-                <text key={`dot-${cx}`} x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fontSize={14}>
-                  {payload.emoji}
-                </text>
+                <circle key={`dot-${cx}`} cx={cx} cy={cy} r={5} fill={payload.color} stroke="white" strokeWidth={2} />
               )
             }}
           />

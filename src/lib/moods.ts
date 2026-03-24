@@ -1,4 +1,4 @@
-export type MoodType = 'happy' | 'sad' | 'angry' | 'anxious' | 'calm' | 'excited' | 'neutral'
+export type MoodType = 'odlicno' | 'dobro' | 'okej' | 'lose' | 'uzasno'
 
 export interface MoodConfig {
   label: string
@@ -6,58 +6,65 @@ export interface MoodConfig {
   color: string
   bg: string
   gradient: string
+  intensity: number
 }
 
 export const MOODS: Record<MoodType, MoodConfig> = {
-  happy: {
-    label: 'Happy',
+  odlicno: {
+    label: 'Odlično',
+    emoji: '💖',
+    color: '#F472B6',
+    bg: 'bg-pink-100',
+    gradient: 'from-pink-200 to-rose-100',
+    intensity: 10,
+  },
+  dobro: {
+    label: 'Dobro',
     emoji: '😊',
-    color: '#FFD700',
-    bg: 'bg-yellow-100',
-    gradient: 'from-yellow-200 to-orange-100',
-  },
-  sad: {
-    label: 'Sad',
-    emoji: '😢',
-    color: '#6B8DD6',
-    bg: 'bg-blue-100',
-    gradient: 'from-blue-200 to-indigo-100',
-  },
-  angry: {
-    label: 'Angry',
-    emoji: '😠',
-    color: '#FF6B6B',
-    bg: 'bg-red-100',
-    gradient: 'from-red-200 to-pink-100',
-  },
-  anxious: {
-    label: 'Anxious',
-    emoji: '😰',
-    color: '#DDA0DD',
-    bg: 'bg-purple-100',
-    gradient: 'from-purple-200 to-pink-100',
-  },
-  calm: {
-    label: 'Calm',
-    emoji: '😌',
-    color: '#90EE90',
-    bg: 'bg-green-100',
-    gradient: 'from-green-200 to-emerald-100',
-  },
-  excited: {
-    label: 'Excited',
-    emoji: '🤩',
-    color: '#FF8C00',
+    color: '#F4A77A',
     bg: 'bg-orange-100',
     gradient: 'from-orange-200 to-amber-100',
+    intensity: 8,
   },
-  neutral: {
-    label: 'Neutral',
+  okej: {
+    label: 'Okej',
     emoji: '😐',
-    color: '#C0C0C0',
-    bg: 'bg-gray-100',
-    gradient: 'from-gray-200 to-slate-100',
+    color: '#94A3B8',
+    bg: 'bg-slate-100',
+    gradient: 'from-slate-200 to-gray-100',
+    intensity: 5,
+  },
+  lose: {
+    label: 'Loše',
+    emoji: '😢',
+    color: '#A78BFA',
+    bg: 'bg-purple-100',
+    gradient: 'from-purple-200 to-violet-100',
+    intensity: 3,
+  },
+  uzasno: {
+    label: 'Užasno',
+    emoji: '😭',
+    color: '#E2C97E',
+    bg: 'bg-yellow-100',
+    gradient: 'from-yellow-200 to-amber-100',
+    intensity: 1,
   },
 }
 
 export const MOOD_KEYS = Object.keys(MOODS) as MoodType[]
+
+// Map old mood keys to new ones for backward compatibility
+export function normalizeMood(mood: string): MoodType {
+  const oldToNew: Record<string, MoodType> = {
+    happy: 'odlicno',
+    excited: 'odlicno',
+    calm: 'dobro',
+    neutral: 'okej',
+    anxious: 'lose',
+    sad: 'lose',
+    angry: 'uzasno',
+  }
+  if (mood in MOODS) return mood as MoodType
+  return oldToNew[mood] || 'okej'
+}

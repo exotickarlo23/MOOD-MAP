@@ -3,8 +3,8 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "SMOOD STORY - Your Mood Diary",
-  description: "Track your mood and write your story every day",
+  title: "Mood Map - Tvoj dnevni mikro-dnevnik",
+  description: "Prati svoje raspoloženje svaki dan",
 };
 
 export default function RootLayout({
@@ -13,9 +13,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 font-sans">
-        <main className="pb-20 md:pt-20 md:pb-8">
+    <html lang="hr" className="h-full antialiased">
+      <body className="min-h-full bg-gradient-to-b from-[#FEF0E4] via-[#FDF2F8] to-[#EDE9FE] font-sans">
+        <main className="pb-20">
           {children}
         </main>
         <Navbar />

@@ -1,4 +1,5 @@
-import { MOODS, type MoodType } from '@/lib/moods'
+import { MOODS, type MoodType, normalizeMood } from '@/lib/moods'
+import MoodIcon from '@/components/MoodIcon'
 
 interface MoodBadgeProps {
   mood: string
@@ -6,19 +7,18 @@ interface MoodBadgeProps {
 }
 
 export default function MoodBadge({ mood, size = 'md' }: MoodBadgeProps) {
-  const config = MOODS[mood as MoodType]
+  const moodKey = normalizeMood(mood)
+  const config = MOODS[moodKey]
   if (!config) return null
 
-  const sizes = {
-    sm: 'text-lg px-2 py-1',
-    md: 'text-2xl px-3 py-1.5',
-    lg: 'text-4xl px-4 py-2',
-  }
+  const iconSizes = { sm: 24, md: 32, lg: 48 }
+  const paddings = { sm: 'px-2 py-1', md: 'px-3 py-1.5', lg: 'px-4 py-2' }
+  const textSizes = { sm: 'text-xs', md: 'text-sm', lg: 'text-base' }
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full ${config.bg} ${sizes[size]}`}>
-      <span>{config.emoji}</span>
-      <span className={`font-medium text-gray-700 ${size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : 'text-base'}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full ${config.bg} ${paddings[size]}`}>
+      <MoodIcon mood={moodKey} size={iconSizes[size]} />
+      <span className={`font-medium text-gray-700 ${textSizes[size]}`}>
         {config.label}
       </span>
     </span>
