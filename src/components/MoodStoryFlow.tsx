@@ -108,8 +108,52 @@ const DAILY_QUESTIONS = [
   'Da moraš odabrati jednu emociju za danas, koja bi bila?',
 ]
 
+const STORAGE_KEY = 'moodmap_seen_questions'
+
 function getTodayQuestion(): string {
-  // Use day-of-year as seed, cycle through all 95 questions
+  // Check if we already picked a question today
+  const todayKey = new Date().toISOString().slice(0, 10)
+
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+
+      // If we already have a question for today, return it
+      if (stored.today === todayKey && typeof stored.index === 'number') {
+        return DAILY_QUESTIONS[stored.index]
+      }
+
+      // Get list of recently seen indices
+      const seen: number[] = Array.isArray(stored.seen) ? stored.seen : []
+
+      // Find questions we haven't shown yet
+      const allIndices = DAILY_QUESTIONS.map((_, i) => i)
+      let available = allIndices.filter((i) => !seen.includes(i))
+
+      // If all questions shown, reset (keep last 5 to avoid immediate repeat)
+      if (available.length === 0) {
+        const lastFive = seen.slice(-5)
+        available = allIndices.filter((i) => !lastFive.includes(i))
+      }
+
+      // Pick random from available
+      const picked = available[Math.floor(Math.random() * available.length)]
+
+      // Update seen list (cap at 90 to ensure no repeat within 90 days)
+      const newSeen = [...seen, picked].slice(-90)
+
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ today: todayKey, index: picked, seen: newSeen })
+      )
+
+      return DAILY_QUESTIONS[picked]
+    } catch {
+      // fallback
+    }
+  }
+
+  // SSR/fallback: use day-of-year
   const now = new Date()
   const startOfYear = new Date(now.getFullYear(), 0, 0)
   const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000)
