@@ -1,18 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase, type MoodEntry } from '@/lib/supabase'
 import { MOODS, MOOD_KEYS, type MoodType, normalizeMood } from '@/lib/moods'
 import MoodIcon from '@/components/MoodIcon'
-
-const MAX_CHARS = 200
+import MoodStoryFlow from '@/components/MoodStoryFlow'
 
 const DAY_NAMES_SHORT = ['Ned', 'Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub']
 
 function getWeekDays() {
   const today = new Date()
   const dayOfWeek = today.getDay()
-  // Start from Monday
   const monday = new Date(today)
   monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7))
 
@@ -29,29 +27,68 @@ function getWeekDays() {
   return days
 }
 
-function formatCroatianDate(date: Date) {
-  const days = ['nedjelja', 'ponedjeljak', 'utorak', 'srijeda', 'četvrtak', 'petak', 'subota']
-  const months = [
-    'siječnja', 'veljače', 'ožujka', 'travnja', 'svibnja', 'lipnja',
-    'srpnja', 'kolovoza', 'rujna', 'listopada', 'studenoga', 'prosinca',
-  ]
-  return `${days[date.getDay()]}, ${date.getDate()}. ${months[date.getMonth()]}`
+// Animated mood carousel for the landing
+function AnimatedMoods() {
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [fade, setFade] = useState(true)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFade(false)
+      setTimeout(() => {
+        setActiveIndex((prev) => (prev + 1) % MOOD_KEYS.length)
+        setFade(true)
+      }, 400)
+    }, 2500)
+    return () => clearInterval(interval)
+  }, [])
+
+  const currentMood = MOOD_KEYS[activeIndex]
+
+  return (
+    <div className="flex flex-col items-center">
+      {/* Background moods - faded */}
+      <div className="flex items-center gap-3 mb-4">
+        {MOOD_KEYS.map((key, i) => {
+          const isActive = i === activeIndex
+          return (
+            <div
+              key={key}
+              className="transition-all duration-500 ease-out"
+              style={{
+                opacity: isActive ? 1 : 0.2,
+                transform: isActive ? 'scale(1.3) translateY(-8px)' : 'scale(0.8)',
+                filter: isActive ? 'none' : 'grayscale(0.5)',
+              }}
+            >
+              <MoodIcon mood={key} size={isActive ? 72 : 44} />
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Mood label */}
+      <p
+        className="text-lg font-semibold text-gray-700 transition-all duration-400"
+        style={{
+          opacity: fade ? 1 : 0,
+          transform: fade ? 'translateY(0)' : 'translateY(8px)',
+        }}
+      >
+        {MOODS[currentMood].label}
+      </p>
+    </div>
+  )
 }
 
 export default function HomePage() {
-  const [selectedMood, setSelectedMood] = useState<MoodType | null>(null)
-  const [story, setStory] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [showFlow, setShowFlow] = useState(false)
   const [todayEntry, setTodayEntry] = useState<MoodEntry | null>(null)
   const [weekEntries, setWeekEntries] = useState<MoodEntry[]>([])
   const [streak, setStreak] = useState({ current: 0, longest: 0, total: 0 })
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       const { data: entries } = await supabase
         .from('mood_entries')
@@ -61,34 +98,33 @@ export default function HomePage() {
 
       const allEntries = entries || []
 
-      // Check if there's an entry today
+      // Check today's entry
       const today = new Date().toDateString()
       const existing = allEntries.find(
         (e: MoodEntry) => new Date(e.created_at).toDateString() === today
       )
-      if (existing) {
-        setTodayEntry(existing)
-        setSelectedMood(normalizeMood(existing.mood))
-        setStory(existing.story || '')
-      }
+      setTodayEntry(existing || null)
 
-      // Get this week's entries
+      // This week
       const weekStart = new Date()
       weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7))
       weekStart.setHours(0, 0, 0, 0)
-      const thisWeek = allEntries.filter(
-        (e: MoodEntry) => new Date(e.created_at) >= weekStart
+      setWeekEntries(
+        allEntries.filter((e: MoodEntry) => new Date(e.created_at) >= weekStart)
       )
-      setWeekEntries(thisWeek)
 
-      // Calculate streak
+      // Streak
       calculateStreak(allEntries)
     } catch {
       // silently handle
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   function calculateStreak(entries: MoodEntry[]) {
     if (entries.length === 0) {
@@ -101,17 +137,14 @@ export default function HomePage() {
     )
     const total = uniqueDays.size
 
-    // Current streak
     let current = 0
     const d = new Date()
     d.setHours(0, 0, 0, 0)
-
     while (uniqueDays.has(d.toDateString())) {
       current++
       d.setDate(d.getDate() - 1)
     }
 
-    // Longest streak
     const sortedDays = Array.from(uniqueDays)
       .map((s) => new Date(s))
       .sort((a, b) => a.getTime() - b.getTime())
@@ -119,44 +152,17 @@ export default function HomePage() {
     let run = 1
     for (let i = 1; i < sortedDays.length; i++) {
       const diff = (sortedDays[i].getTime() - sortedDays[i - 1].getTime()) / 86400000
-      if (diff === 1) {
-        run++
-      } else {
-        longest = Math.max(longest, run)
-        run = 1
-      }
+      if (diff === 1) run++
+      else { longest = Math.max(longest, run); run = 1 }
     }
     longest = Math.max(longest, run)
 
     setStreak({ current, longest, total })
   }
 
-  async function handleSave() {
-    if (!selectedMood) return
-    setSaving(true)
-
-    try {
-      const moodData = {
-        mood: selectedMood,
-        intensity: MOODS[selectedMood].intensity,
-        story: story.trim() || null,
-      }
-
-      if (todayEntry) {
-        await supabase
-          .from('mood_entries')
-          .update(moodData)
-          .eq('id', todayEntry.id)
-      } else {
-        await supabase.from('mood_entries').insert(moodData)
-      }
-
-      await loadData()
-    } catch {
-      alert('Greška pri spremanju. Pokušaj ponovo.')
-    } finally {
-      setSaving(false)
-    }
+  function handleFlowComplete() {
+    setShowFlow(false)
+    loadData()
   }
 
   const weekDays = getWeekDays()
@@ -165,96 +171,49 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="max-w-md mx-auto px-4 py-8 flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-3 border-pink-200 border-t-pink-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-3 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
       </div>
+    )
+  }
+
+  // Story flow overlay
+  if (showFlow) {
+    return (
+      <MoodStoryFlow
+        todayEntry={todayEntry}
+        onComplete={handleFlowComplete}
+        onClose={() => setShowFlow(false)}
+      />
     )
   }
 
   return (
     <div className="max-w-md mx-auto px-4 pt-6 pb-4">
       {/* Header */}
-      <div className="text-center mb-6">
+      <div className="text-center mb-2">
         <h1 className="text-3xl font-bold text-gray-800 tracking-tight">
-          <span className="text-2xl mr-1">&#x1F338;</span> Mood Map
+          Mood Map
         </h1>
         <p className="text-gray-400 text-sm italic mt-0.5">tvoj dnevni mikro-dnevnik</p>
       </div>
 
-      {/* Mood Entry Card */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-sm mb-4">
-        <p className="text-center text-gray-400 text-sm mb-1">
-          {formatCroatianDate(new Date())}
-        </p>
-        <h2 className="text-center text-xl font-bold text-gray-800 mb-4">
-          Kako si danas? &#x2728;
-        </h2>
+      {/* Hero section: Animated moods + CTA */}
+      <div className="flex flex-col items-center justify-center py-10">
+        <AnimatedMoods />
 
-        {/* Mood icons row */}
-        <div className="flex items-end justify-center gap-2 mb-5">
-          {MOOD_KEYS.map((key) => {
-            const isSelected = selectedMood === key
-            return (
-              <button
-                key={key}
-                onClick={() => setSelectedMood(key)}
-                className="flex flex-col items-center gap-1 transition-all duration-200"
-              >
-                <div
-                  className={`rounded-2xl p-1 transition-all duration-200 ${
-                    isSelected
-                      ? 'bg-gray-100 scale-115 shadow-md ring-2 ring-gray-200'
-                      : 'hover:scale-105'
-                  }`}
-                >
-                  <MoodIcon mood={key} size={isSelected ? 56 : 44} />
-                </div>
-                <span
-                  className={`text-[10px] font-semibold uppercase tracking-wide ${
-                    isSelected ? 'text-gray-700' : 'text-gray-400'
-                  }`}
-                >
-                  {MOODS[key].label}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Story input */}
-        <div className="relative mb-4">
-          <textarea
-            value={story}
-            onChange={(e) => {
-              if (e.target.value.length <= MAX_CHARS) setStory(e.target.value)
-            }}
-            placeholder="Danas je bilo dobro jer smo išli na izlet"
-            rows={2}
-            className="w-full p-3 rounded-xl border border-gray-200 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-transparent text-gray-700 placeholder-gray-300 text-sm"
-          />
-          <span className="absolute bottom-2 right-3 text-[11px] text-gray-300">
-            {story.length}/{MAX_CHARS}
-          </span>
-        </div>
-
-        {/* Save button */}
         <button
-          onClick={handleSave}
-          disabled={!selectedMood || saving}
-          className={`w-full py-3.5 rounded-2xl font-semibold text-base transition-all duration-200 ${
-            !selectedMood || saving
-              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              : 'bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 text-white hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]'
-          }`}
+          onClick={() => setShowFlow(true)}
+          className="mt-10 w-full max-w-xs py-4 px-8 rounded-2xl font-bold text-lg bg-gray-800 text-white hover:bg-gray-700 active:scale-[0.97] transition-all duration-200 shadow-lg shadow-gray-800/20"
         >
-          {saving ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="animate-spin inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
-              Spremam...
-            </span>
-          ) : (
-            <span>{todayEntry ? 'Ažuriraj' : 'Spremi'}</span>
-          )}
+          {todayEntry ? 'Ažuriraj svoj dan' : 'Kako si danas?'}
         </button>
+
+        {todayEntry && (
+          <div className="mt-4 flex items-center gap-2 text-sm text-gray-400">
+            <MoodIcon mood={normalizeMood(todayEntry.mood)} size={20} />
+            <span>Danas: {MOODS[normalizeMood(todayEntry.mood)].label}</span>
+          </div>
+        )}
       </div>
 
       {/* Weekly Insight Card */}
@@ -273,9 +232,6 @@ export default function HomePage() {
         </p>
         <div className="flex items-center gap-1.5">
           {weekDays.map((day, i) => {
-            const hasEntry = weekEntries.some(
-              (e) => new Date(e.created_at).toDateString() === day.date.toDateString()
-            )
             const entryForDay = weekEntries.find(
               (e) => new Date(e.created_at).toDateString() === day.date.toDateString()
             )
@@ -286,17 +242,15 @@ export default function HomePage() {
                   className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                     day.isToday
                       ? 'bg-gray-700 text-white'
-                      : hasEntry
+                      : entryForDay
                         ? 'bg-gray-100'
                         : 'bg-gray-50'
                   }`}
                 >
-                  {hasEntry && entryForDay ? (
+                  {entryForDay ? (
                     <MoodIcon mood={normalizeMood(entryForDay.mood)} size={22} />
                   ) : (
-                    <span className={`text-xs ${day.isToday ? 'text-gray-300' : 'text-gray-300'}`}>
-                      &#x2022;
-                    </span>
+                    <span className="text-xs text-gray-300">&#x2022;</span>
                   )}
                 </div>
               </div>
