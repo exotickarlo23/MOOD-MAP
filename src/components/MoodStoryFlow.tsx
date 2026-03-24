@@ -140,28 +140,28 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
             <p className="text-center text-gray-400 text-sm mb-8">
               Odaberi osjećaj koji te najbolje opisuje
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="flex items-end justify-center gap-3">
               {MOOD_KEYS.map((key) => {
                 const isSelected = selectedMood === key
                 return (
                   <button
                     key={key}
                     onClick={() => setSelectedMood(key)}
-                    className="flex flex-col items-center gap-2 transition-all duration-300"
+                    className="flex flex-col items-center gap-1.5 flex-1 min-w-0 transition-all duration-300"
                   >
                     <div
-                      className={`rounded-2xl p-2 transition-all duration-300 ${
+                      className={`rounded-2xl p-1 transition-all duration-300 ${
                         isSelected
-                          ? 'bg-white/90 scale-125 shadow-lg ring-2 ring-white/50'
+                          ? 'bg-white/90 shadow-lg ring-2 ring-white/50 scale-110'
                           : selectedMood && !isSelected
-                            ? 'opacity-40 scale-90'
-                            : 'hover:scale-110'
+                            ? 'opacity-40'
+                            : 'hover:scale-105'
                       }`}
                     >
-                      <MoodIcon mood={key} size={isSelected ? 64 : 52} />
+                      <MoodIcon mood={key} size={52} />
                     </div>
                     <span
-                      className={`text-xs font-semibold uppercase tracking-wide transition-all duration-300 ${
+                      className={`text-[10px] font-semibold uppercase tracking-wide transition-all duration-300 ${
                         isSelected ? 'text-gray-800' : 'text-gray-400'
                       }`}
                     >
@@ -177,10 +177,10 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
         {/* Step 2: Thoughtful question */}
         {step === 1 && (
           <div className="w-full max-w-sm animate-fadeIn">
-            <div className="text-center mb-8">
+            <div className="flex flex-col items-center text-center mb-8">
               {selectedMood && (
                 <div className="mb-4">
-                  <MoodIcon mood={selectedMood} size={48} />
+                  <MoodIcon mood={selectedMood} size={64} />
                 </div>
               )}
               <h2 className="text-xl font-bold text-gray-800 leading-snug">
@@ -204,10 +204,10 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
         {/* Step 3: Story / description */}
         {step === 2 && (
           <div className="w-full max-w-sm animate-fadeIn">
-            <div className="text-center mb-8">
+            <div className="flex flex-col items-center text-center mb-8">
               {selectedMood && (
                 <div className="mb-4">
-                  <MoodIcon mood={selectedMood} size={48} />
+                  <MoodIcon mood={selectedMood} size={64} />
                 </div>
               )}
               <h2 className="text-xl font-bold text-gray-800 mb-1">
