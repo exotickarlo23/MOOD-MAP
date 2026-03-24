@@ -5,6 +5,7 @@ import { supabase, type MoodEntry } from '@/lib/supabase'
 import { MOODS, MOOD_KEYS, type MoodType, normalizeMood } from '@/lib/moods'
 import MoodIcon from '@/components/MoodIcon'
 import MoodStoryFlow from '@/components/MoodStoryFlow'
+import ThrowbackCard from '@/components/ThrowbackCard'
 
 const DAY_NAMES_SHORT = ['Ned', 'Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub']
 
@@ -85,6 +86,7 @@ export default function HomePage() {
   const [showFlow, setShowFlow] = useState(false)
   const [todayEntry, setTodayEntry] = useState<MoodEntry | null>(null)
   const [weekEntries, setWeekEntries] = useState<MoodEntry[]>([])
+  const [allEntries, setAllEntries] = useState<MoodEntry[]>([])
   const [streak, setStreak] = useState({ current: 0, longest: 0, total: 0 })
   const [loading, setLoading] = useState(true)
 
@@ -96,11 +98,12 @@ export default function HomePage() {
         .order('created_at', { ascending: false })
         .limit(100)
 
-      const allEntries = entries || []
+      const allEntriesData = entries || []
+      setAllEntries(allEntriesData)
 
       // Check today's entry
       const today = new Date().toDateString()
-      const existing = allEntries.find(
+      const existing = allEntriesData.find(
         (e: MoodEntry) => new Date(e.created_at).toDateString() === today
       )
       setTodayEntry(existing || null)
@@ -110,11 +113,11 @@ export default function HomePage() {
       weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7))
       weekStart.setHours(0, 0, 0, 0)
       setWeekEntries(
-        allEntries.filter((e: MoodEntry) => new Date(e.created_at) >= weekStart)
+        allEntriesData.filter((e: MoodEntry) => new Date(e.created_at) >= weekStart)
       )
 
       // Streak
-      calculateStreak(allEntries)
+      calculateStreak(allEntriesData)
     } catch {
       // silently handle
     } finally {
@@ -258,6 +261,9 @@ export default function HomePage() {
           })}
         </div>
       </div>
+
+      {/* Throwback Card */}
+      <ThrowbackCard entries={allEntries} />
 
       {/* Streak Card */}
       <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-sm">

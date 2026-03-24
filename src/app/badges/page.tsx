@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase, type MoodEntry } from '@/lib/supabase'
+import { normalizeMood } from '@/lib/moods'
 
 interface Badge {
   icon: string
@@ -46,6 +47,30 @@ export default function BadgesPage() {
       else { longestStreak = Math.max(longestStreak, run); run = 1 }
     }
     longestStreak = Math.max(longestStreak, run)
+
+    // New badge calculations
+    const uniqueMoods = new Set(entries.map((e) => normalizeMood(e.mood))).size
+    const entriesWithStory = entries.filter((e) => e.story?.trim()).length
+    const hasEarlyEntry = entries.some((e) => new Date(e.created_at).getHours() < 8)
+    const hasLateEntry = entries.some((e) => new Date(e.created_at).getHours() >= 22)
+
+    // Comeback: gap of 7+ days then a new entry
+    let hasComeback = false
+    for (let i = 1; i < sortedDays.length; i++) {
+      const diff = (sortedDays[i].getTime() - sortedDays[i - 1].getTime()) / 86400000
+      if (diff >= 7) { hasComeback = true; break }
+    }
+
+    // Seasonal: check entries across all 4 seasons
+    const seasons = new Set(
+      entries.map((e) => {
+        const month = new Date(e.created_at).getMonth()
+        if (month >= 2 && month <= 4) return 'spring'
+        if (month >= 5 && month <= 7) return 'summer'
+        if (month >= 8 && month <= 10) return 'autumn'
+        return 'winter'
+      })
+    )
 
     setBadges([
       {
@@ -95,6 +120,42 @@ export default function BadgesPage() {
         title: '100 unosa',
         description: 'Upiši ukupno 100 unosa',
         earned: total >= 100,
+      },
+      {
+        icon: '\u{1F3AD}',
+        title: 'Mood Explorer',
+        description: 'Zabilježi svih 5 raspoloženja',
+        earned: uniqueMoods >= 5,
+      },
+      {
+        icon: '\u{1F4D6}',
+        title: 'Storyteller',
+        description: 'Napiši 20 priča uz unose',
+        earned: entriesWithStory >= 20,
+      },
+      {
+        icon: '\u{1F305}',
+        title: 'Early Bird',
+        description: 'Upiši unos prije 8 ujutro',
+        earned: hasEarlyEntry,
+      },
+      {
+        icon: '\u{1F319}',
+        title: 'Night Owl',
+        description: 'Upiši unos nakon 22h',
+        earned: hasLateEntry,
+      },
+      {
+        icon: '\u{1F4AA}',
+        title: 'Comeback',
+        description: 'Vrati se nakon 7+ dana pauze',
+        earned: hasComeback,
+      },
+      {
+        icon: '\u{1F5D3}',
+        title: 'Sezonski Dnevničar',
+        description: 'Unosi u sva 4 godišnja doba',
+        earned: seasons.size >= 4,
       },
     ])
   }

@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { MOODS, MOOD_KEYS, type MoodType } from '@/lib/moods'
+import { getMoodBuddyMessage } from '@/lib/moodMessages'
 import MoodIcon from '@/components/MoodIcon'
 import type { MoodEntry } from '@/lib/supabase'
 
@@ -172,6 +173,7 @@ interface MoodStoryFlowProps {
 export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodStoryFlowProps) {
   const [step, setStep] = useState(0)
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null)
+  const [buddyMessage, setBuddyMessage] = useState<string | null>(null)
   const [answer, setAnswer] = useState('')
   const [story, setStory] = useState('')
   const [saving, setSaving] = useState(false)
@@ -315,7 +317,10 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
                 return (
                   <button
                     key={key}
-                    onClick={() => setSelectedMood(key)}
+                    onClick={() => {
+                      setSelectedMood(key)
+                      setBuddyMessage(getMoodBuddyMessage(key))
+                    }}
                     className="flex flex-col items-center gap-1.5 flex-1 min-w-0 transition-all duration-300"
                   >
                     <div
@@ -340,6 +345,13 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
                 )
               })}
             </div>
+
+            {/* Mood Buddy message */}
+            {selectedMood && buddyMessage && (
+              <p className="text-center text-sm text-gray-500 mt-6 animate-fadeIn">
+                {buddyMessage}
+              </p>
+            )}
           </div>
         )}
 
