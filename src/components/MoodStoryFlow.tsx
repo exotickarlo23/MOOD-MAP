@@ -207,9 +207,10 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
       }
 
       onComplete()
-    } catch (err) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : JSON.stringify(err)
       console.error('Supabase save error:', err)
-      alert('Greška pri spremanju. Pokušaj ponovo.')
+      alert(`Greška pri spremanju: ${message}`)
       setSaving(false)
     }
   }
