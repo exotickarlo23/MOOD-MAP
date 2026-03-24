@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { MOODS, MOOD_KEYS, type MoodType } from '@/lib/moods'
 import MoodIcon from '@/components/MoodIcon'
@@ -9,7 +9,7 @@ import type { MoodEntry } from '@/lib/supabase'
 const MAX_CHARS = 200
 const TOTAL_STEPS = 3
 
-// Thoughtful questions that rotate daily
+// 95 unique questions — no repeat for ~3 months
 const DAILY_QUESTIONS = [
   'Koji trenutak danas te natjerao da se nasmiješiš?',
   'Što te danas iznenadilo?',
@@ -25,14 +25,99 @@ const DAILY_QUESTIONS = [
   'Što si danas učinio/la za sebe?',
   'Koja misao ti se danas stalno vraćala?',
   'Što bi rekao/la svom jutarnjem "ja"?',
+  'Koji razgovor te danas ostavio bez riječi?',
+  'Da možeš ponoviti jedan sat danas, koji bi bio?',
+  'Što te danas nasmijalo do suza?',
+  'Koji je tvoj najdraži detalj iz danas?',
+  'Kome bi poslao/la poruku zahvale večeras?',
+  'Što si danas primijetio/la što inače ne bi?',
+  'Kako bi opisao/la danas u tri riječi?',
+  'Koji trenutak danas bi stavio/la u okvir?',
+  'Što te danas podsjetilo na djetinjstvo?',
+  'Da danas ima zvučni zapis, koja bi pjesma to bila?',
+  'Koji okus ili jelo ti je obilježilo dan?',
+  'Što si danas napravio/la prvi put?',
+  'Koji problem si danas riješio/la na kreativan način?',
+  'Tko te danas inspirirao?',
+  'Što te danas učinilo ponosnim/om?',
+  'Koji trenutak tišine si danas cijenio/la?',
+  'Da možeš poslati razglednicu iz danas, što bi na njoj pisalo?',
+  'Što bi savjetovao/la nekome tko prolazi isti dan kao ti?',
+  'Koji neočekivani kompliment bi dao/la sebi danas?',
+  'Što te danas naučilo strpljenju?',
+  'Koji je bio tvoj najhrabriji potez danas?',
+  'Da je danas boja, koja bi bila?',
+  'Što si danas prepustio/la kontroli i bilo je ok?',
+  'Koje pitanje ti se danas vrtjelo u glavi?',
+  'Što te danas iznenadilo kod sebe?',
+  'Koji mali čin ljubaznosti si danas primijetio/la?',
+  'Da snimamo film o tvom danu, kako bi se zvao?',
+  'Što je najljepše što si danas vidio/la kroz prozor?',
+  'Koji trenutak danas te podsjetio zašto voliš svoj život?',
+  'Što si danas otkrio/la o nekome bliskom?',
+  'Kako si se danas nosio/la s nečim teškim?',
+  'Koji zvuk ti je danas bio najdraži?',
+  'Što te danas učinilo da se osjećaš živim/om?',
+  'Da možeš zamrznuti jedan osjećaj iz danas, koji bi bio?',
+  'Koji mali ritual ti je danas donio mir?',
+  'Što si danas pustio/la da ode?',
+  'Koja sitnica te danas razveselila?',
+  'Kako si se danas izrazio/la kreativno?',
+  'Koji trenutak danas bi podijelio/la s prijateljem?',
+  'Što te danas naučilo o strpljenju?',
+  'Da piše tvoj dnevnik, što bi rekao o danas?',
+  'Koji je bio tvoj omiljeni zalogaj danas?',
+  'Što si danas učinio/la sporije nego inače?',
+  'Koji pogled te danas zaustavio na trenutak?',
+  'Kako bi se osjećao/la da je svaki dan kao danas?',
+  'Što te danas potaknulo da razmišljaš drugačije?',
+  'Koji je tvoj tajni recept za dobar dan?',
+  'Što si danas čitao/la, slušao/la ili gledao/la što ti se svidjelo?',
+  'Koji trenutak danas bi želio/la zapamtiti zauvijek?',
+  'Što te danas približilo tvojim ciljevima?',
+  'Kako si danas pokazao/la ljubav prema sebi?',
+  'Koji je bio najsmješniji trenutak danas?',
+  'Što bi promijenio/la da možeš ponoviti danas?',
+  'Koji osjećaj ti je danas bio najjači?',
+  'Da možeš napisati pismo budućem sebi, što bi rekao/la o danas?',
+  'Što te danas motiviralo da nastaviš dalje?',
+  'Koji mali uspjeh danas zaslužuje slavlje?',
+  'Kako si se danas povezao/la s nekim?',
+  'Što je najljepše što ti je netko rekao danas?',
+  'Koji trenutak danas te iznenadio na dobar način?',
+  'Da imaš supermoć samo za danas, koju bi odabrao/la?',
+  'Što si danas napravio/la što te učinilo sretnijim/om?',
+  'Koji trenutak mira si danas pronašao/la?',
+  'Što te danas podsjetilo da si jak/a?',
+  'Koji je tvoj najdraži dio večeri?',
+  'Što si danas primijetio/la u prirodi?',
+  'Kako si se danas nosio/la s promjenom plana?',
+  'Koji kompliment si danas zaslužio/la?',
+  'Što bi rekao/la da moraš opisati danas jednom rečenicom?',
+  'Koji trenutak danas ti je dao nadu?',
+  'Što si danas naučio/la što nisi znao/la jutros?',
+  'Kako si danas bio/la tu za nekoga?',
+  'Koji miris te danas asocirao na nešto lijepo?',
+  'Da danas ima naslov u novinama, koji bi bio?',
+  'Što ti je danas donijelo unutarnji mir?',
+  'Koji si mali izazov danas savladao/la?',
+  'Što te danas podsjetilo na tvoju snagu?',
+  'Kako bi ocijenio/la danas od 1 do 10 i zašto?',
+  'Što te danas naučilo nešto novo o svijetu?',
+  'Koji trenutak danas bi ponovio/la u slow motionu?',
+  'Da moraš odabrati jednu emociju za danas, koja bi bila?',
 ]
 
 function getTodayQuestion(): string {
-  const dayOfYear = Math.floor(
-    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
-  )
+  // Use day-of-year as seed, cycle through all 95 questions
+  const now = new Date()
+  const startOfYear = new Date(now.getFullYear(), 0, 0)
+  const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000)
   return DAILY_QUESTIONS[dayOfYear % DAILY_QUESTIONS.length]
 }
+
+// Tap zones: left 30% = back, right 30% = forward
+const TAP_ZONE_THRESHOLD = 0.30
 
 interface MoodStoryFlowProps {
   todayEntry: MoodEntry | null
@@ -46,14 +131,21 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
   const [answer, setAnswer] = useState('')
   const [story, setStory] = useState('')
   const [saving, setSaving] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   const question = getTodayQuestion()
 
+  const canGoNext = useCallback(() => {
+    if (step === 0) return !!selectedMood
+    if (step === 1) return true // can always skip question
+    return false // step 2 has a save button
+  }, [step, selectedMood])
+
   const handleNext = useCallback(() => {
-    if (step < TOTAL_STEPS - 1) {
+    if (step < TOTAL_STEPS - 1 && canGoNext()) {
       setStep((s) => s + 1)
     }
-  }, [step])
+  }, [step, canGoNext])
 
   const handleBack = useCallback(() => {
     if (step > 0) {
@@ -62,6 +154,32 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
       onClose()
     }
   }, [step, onClose])
+
+  // Instagram-style tap navigation
+  function handleTapNavigation(e: React.MouseEvent<HTMLDivElement>) {
+    // Don't navigate if user tapped on an interactive element
+    const target = e.target as HTMLElement
+    if (
+      target.closest('button') ||
+      target.closest('textarea') ||
+      target.closest('input') ||
+      target.closest('a')
+    ) {
+      return
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const relativeX = x / rect.width
+
+    if (relativeX <= TAP_ZONE_THRESHOLD) {
+      handleBack()
+    } else if (relativeX >= 1 - TAP_ZONE_THRESHOLD) {
+      if (step < TOTAL_STEPS - 1 && canGoNext()) {
+        handleNext()
+      }
+    }
+  }
 
   async function handleSave() {
     if (!selectedMood) return
@@ -76,33 +194,38 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
       }
 
       if (todayEntry) {
-        await supabase
+        const { error } = await supabase
           .from('mood_entries')
           .update(moodData)
           .eq('id', todayEntry.id)
+        if (error) throw error
       } else {
-        await supabase.from('mood_entries').insert(moodData)
+        const { error } = await supabase
+          .from('mood_entries')
+          .insert(moodData)
+        if (error) throw error
       }
 
       onComplete()
-    } catch {
+    } catch (err) {
+      console.error('Supabase save error:', err)
       alert('Greška pri spremanju. Pokušaj ponovo.')
-    } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-br from-[#E8F5EE] via-[#D4ECEC] to-[#F5F0E0] flex flex-col">
+    <div
+      className="fixed inset-0 z-50 bg-gradient-to-br from-[#E8F5EE] via-[#D4ECEC] to-[#F5F0E0] flex flex-col"
+      onClick={handleTapNavigation}
+    >
       {/* Progress bar */}
       <div className="px-4 pt-3 pb-2">
         <div className="flex gap-1.5">
           {Array.from({ length: TOTAL_STEPS }, (_, i) => (
             <div key={i} className="flex-1 h-1 rounded-full overflow-hidden bg-black/10">
               <div
-                className={`h-full rounded-full transition-all duration-500 ease-out ${
-                  i <= step ? 'bg-gray-800 w-full' : 'w-0'
-                }`}
+                className="h-full rounded-full transition-all duration-500 ease-out bg-gray-800"
                 style={{ width: i <= step ? '100%' : '0%' }}
               />
             </div>
@@ -110,13 +233,13 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
         </div>
       </div>
 
-      {/* Close button */}
+      {/* Header nav */}
       <div className="px-4 py-2 flex justify-between items-center">
         <button onClick={handleBack} className="text-gray-500 text-sm font-medium">
           {step === 0 ? 'Zatvori' : 'Natrag'}
         </button>
         <span className="text-xs text-gray-400">{step + 1}/{TOTAL_STEPS}</span>
-        {step < TOTAL_STEPS - 1 && selectedMood && step === 0 && (
+        {step === 0 && selectedMood && (
           <button onClick={handleNext} className="text-gray-700 text-sm font-semibold">
             Dalje
           </button>
@@ -126,11 +249,12 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
             {answer.trim() ? 'Dalje' : 'Preskoči'}
           </button>
         )}
+        {step === 0 && !selectedMood && <div className="w-12" />}
         {step === 2 && <div className="w-12" />}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 flex items-center justify-center px-6">
+      {/* Content area */}
+      <div ref={contentRef} className="flex-1 flex items-center justify-center px-6">
         {/* Step 1: Pick mood */}
         {step === 0 && (
           <div className="w-full max-w-sm animate-fadeIn">
@@ -248,7 +372,7 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
               )}
             </button>
 
-            {(answer.trim() || story.trim()) ? null : (
+            {!(answer.trim() || story.trim()) && (
               <button
                 onClick={handleSave}
                 disabled={saving}
