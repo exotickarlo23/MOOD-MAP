@@ -252,15 +252,14 @@ export default function HomePage() {
               Spremam...
             </span>
           ) : (
-            <span>&#x1F4DD; {todayEntry ? 'Ažuriraj' : 'Spremi'}</span>
+            <span>{todayEntry ? 'Ažuriraj' : 'Spremi'}</span>
           )}
         </button>
       </div>
 
       {/* Weekly Insight Card */}
       <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-sm mb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xl">&#x1F44B;</span>
+        <div className="mb-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
             Tjedni uvid
           </span>
@@ -307,35 +306,25 @@ export default function HomePage() {
       </div>
 
       {/* Streak Card */}
-      <div className="bg-gray-800 rounded-3xl p-5 shadow-sm text-white">
+      <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-sm">
         <div className="text-center mb-3">
-          <span className="text-3xl">&#x1F331;</span>
-          <h3 className="text-lg font-bold mt-1">
+          <h3 className="text-lg font-bold text-gray-800">
             {streak.current === 0
               ? 'Započni streak!'
-              : `${streak.current} ${streak.current === 1 ? 'dan' : streak.current < 5 ? 'dana' : 'dana'} zaredom!`}
+              : `${streak.current} ${streak.current === 1 ? 'dan' : 'dana'} zaredom!`}
           </h3>
         </div>
         <div className="flex justify-around text-center">
           <div>
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <span className="text-yellow-400 text-sm">&#x26A1;</span>
-            </div>
-            <p className="text-2xl font-bold">{streak.current}</p>
+            <p className="text-2xl font-bold text-gray-800">{streak.current}</p>
             <p className="text-[10px] uppercase tracking-wider text-gray-400">Trenutni</p>
           </div>
           <div>
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <span className="text-orange-400 text-sm">&#x1F3C6;</span>
-            </div>
-            <p className="text-2xl font-bold">{streak.longest}</p>
+            <p className="text-2xl font-bold text-gray-800">{streak.longest}</p>
             <p className="text-[10px] uppercase tracking-wider text-gray-400">Najduži</p>
           </div>
           <div>
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <span className="text-red-400 text-sm">&#x1F4CA;</span>
-            </div>
-            <p className="text-2xl font-bold">{streak.total}</p>
+            <p className="text-2xl font-bold text-gray-800">{streak.total}</p>
             <p className="text-[10px] uppercase tracking-wider text-gray-400">Ukupno</p>
           </div>
         </div>
