@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { MOODS, type MoodType } from '@/lib/moods'
 import type { MoodEntry } from '@/lib/supabase'
@@ -9,24 +10,27 @@ interface MoodChartProps {
 }
 
 export default function MoodChart({ entries }: MoodChartProps) {
-  if (entries.length < 2) {
+  const data = useMemo(() => {
+    if (entries.length < 2) return null
+    return [...entries]
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      .slice(-14)
+      .map((entry) => ({
+        date: new Date(entry.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }),
+        intensity: entry.intensity,
+        mood: entry.mood,
+        emoji: MOODS[entry.mood as MoodType]?.emoji || '😐',
+        color: MOODS[entry.mood as MoodType]?.color || '#C0C0C0',
+      }))
+  }, [entries])
+
+  if (!data) {
     return (
       <div className="flex items-center justify-center h-48 bg-white/50 rounded-2xl border border-gray-100">
         <p className="text-gray-400 text-sm">Add at least 2 entries to see trends</p>
       </div>
     )
   }
-
-  const data = [...entries]
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-    .slice(-14)
-    .map((entry) => ({
-      date: new Date(entry.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }),
-      intensity: entry.intensity,
-      mood: entry.mood,
-      emoji: MOODS[entry.mood as MoodType]?.emoji || '😐',
-      color: MOODS[entry.mood as MoodType]?.color || '#C0C0C0',
-    }))
 
   return (
     <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-100">

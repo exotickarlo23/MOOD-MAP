@@ -1,26 +1,9 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { supabase, type MoodEntry } from '@/lib/supabase'
+import { getRecentEntries } from '@/lib/queries'
 import EntryCard from '@/components/EntryCard'
 
-export default function Home() {
-  const [recentEntries, setRecentEntries] = useState<MoodEntry[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchRecent() {
-      const { data } = await supabase
-        .from('mood_entries')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(3)
-      setRecentEntries(data || [])
-      setLoading(false)
-    }
-    fetchRecent()
-  }, [])
+export default async function Home() {
+  const recentEntries = await getRecentEntries(3)
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -49,13 +32,7 @@ export default function Home() {
           )}
         </div>
 
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-white/50 rounded-2xl animate-pulse" />
-            ))}
-          </div>
-        ) : recentEntries.length === 0 ? (
+        {recentEntries.length === 0 ? (
           <div className="text-center py-12 bg-white/30 rounded-2xl">
             <span className="text-5xl block mb-3">📝</span>
             <p className="text-gray-500">No entries yet. Start by logging your first mood!</p>
