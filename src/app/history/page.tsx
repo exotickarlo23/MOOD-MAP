@@ -2,6 +2,8 @@ import { getAllEntries } from '@/lib/queries'
 import EntryCard from '@/components/EntryCard'
 import LazyMoodChart from '@/components/LazyMoodChart'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HistoryPage() {
   const entries = await getAllEntries(50)
 

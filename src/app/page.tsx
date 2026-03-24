@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { getRecentEntries } from '@/lib/queries'
 import EntryCard from '@/components/EntryCard'
 
+export const dynamic = 'force-dynamic'
+
 export default async function Home() {
   const recentEntries = await getRecentEntries(3)
 
