@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { addEntry } from '@/lib/moodStorage'
 import { MOODS, type MoodType } from '@/lib/moods'
 import MoodSelector from '@/components/MoodSelector'
 import StoryEditor from '@/components/StoryEditor'
@@ -13,23 +13,21 @@ export default function NewEntryPage() {
   const [story, setStory] = useState('')
   const [saving, setSaving] = useState(false)
 
-  async function handleSave() {
+  function handleSave() {
     if (!selectedMood) return
     setSaving(true)
 
-    const { error } = await supabase.from('mood_entries').insert({
-      mood: selectedMood,
-      intensity: MOODS[selectedMood].intensity,
-      story: story.trim() || null,
-    })
-
-    if (error) {
+    try {
+      addEntry({
+        mood: selectedMood,
+        intensity: MOODS[selectedMood].intensity,
+        story: story.trim() || null,
+      })
+      router.push('/')
+    } catch {
       alert('Greška pri spremanju. Pokušaj ponovo.')
       setSaving(false)
-      return
     }
-
-    router.push('/')
   }
 
   return (

@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase, type MoodEntry } from '@/lib/supabase'
-import { MOODS, normalizeMood } from '@/lib/moods'
+import { getAllEntries, type MoodEntry } from '@/lib/moodStorage'
+import { normalizeMood } from '@/lib/moods'
 import MoodIcon from '@/components/MoodIcon'
 
 const MONTH_NAMES = [
@@ -17,15 +17,7 @@ export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
 
   useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from('mood_entries')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(200)
-      setEntries(data || [])
-    }
-    load()
+    setEntries(getAllEntries(200))
   }, [])
 
   const year = currentMonth.getFullYear()
