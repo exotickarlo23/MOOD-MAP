@@ -184,8 +184,8 @@ export default function BadgesPage() {
             key={i}
             className={`rounded-2xl p-4 text-center transition-all ${
               badge.earned
-                ? 'bg-white/80 shadow-sm'
-                : 'bg-gray-100/50 opacity-50 grayscale'
+                ? ''
+                : 'opacity-40 grayscale'
             }`}
           >
             <div className="flex justify-center mb-2">
