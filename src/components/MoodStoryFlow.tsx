@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
+import { addEntry, updateEntry, type MoodEntry } from '@/lib/moodStorage'
 import { MOODS, MOOD_KEYS, type MoodType } from '@/lib/moods'
 import MoodIcon from '@/components/MoodIcon'
-import type { MoodEntry } from '@/lib/supabase'
 
 const MAX_CHARS = 200
 const TOTAL_STEPS = 3
@@ -225,7 +224,7 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
     }
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!selectedMood) return
     setSaving(true)
 
@@ -238,22 +237,15 @@ export default function MoodStoryFlow({ todayEntry, onComplete, onClose }: MoodS
       }
 
       if (todayEntry) {
-        const { error } = await supabase
-          .from('mood_entries')
-          .update(moodData)
-          .eq('id', todayEntry.id)
-        if (error) throw error
+        updateEntry(todayEntry.id, moodData)
       } else {
-        const { error } = await supabase
-          .from('mood_entries')
-          .insert(moodData)
-        if (error) throw error
+        addEntry(moodData)
       }
 
       onComplete()
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : JSON.stringify(err)
-      console.error('Supabase save error:', err)
+      console.error('Save error:', err)
       alert(`Greška pri spremanju: ${message}`)
       setSaving(false)
     }

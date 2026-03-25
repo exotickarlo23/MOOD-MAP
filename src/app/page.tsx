@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { supabase, type MoodEntry } from '@/lib/supabase'
+import { getAllEntries, type MoodEntry } from '@/lib/moodStorage'
 import { MOODS, MOOD_KEYS, type MoodType, normalizeMood } from '@/lib/moods'
 import MoodIcon from '@/components/MoodIcon'
 import MoodStoryFlow from '@/components/MoodStoryFlow'
@@ -88,15 +88,9 @@ export default function HomePage() {
   const [streak, setStreak] = useState({ current: 0, longest: 0, total: 0 })
   const [loading, setLoading] = useState(true)
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(() => {
     try {
-      const { data: entries } = await supabase
-        .from('mood_entries')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100)
-
-      const allEntries = entries || []
+      const allEntries = getAllEntries(100)
 
       // Check today's entry
       const today = new Date().toDateString()

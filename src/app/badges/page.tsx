@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase, type MoodEntry } from '@/lib/supabase'
+import { getAllEntries, type MoodEntry } from '@/lib/moodStorage'
 
 interface Badge {
   icon: string
@@ -15,17 +15,9 @@ export default function BadgesPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from('mood_entries')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(200)
-      const entries = data || []
-      computeBadges(entries)
-      setLoading(false)
-    }
-    load()
+    const entries = getAllEntries(200)
+    computeBadges(entries)
+    setLoading(false)
   }, [])
 
   function computeBadges(entries: MoodEntry[]) {

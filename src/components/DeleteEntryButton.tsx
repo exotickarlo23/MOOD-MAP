@@ -2,16 +2,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { deleteEntry } from '@/lib/moodStorage'
 
 export default function DeleteEntryButton({ entryId }: { entryId: string }) {
   const router = useRouter()
   const [deleting, setDeleting] = useState(false)
 
-  async function handleDelete() {
-    if (!confirm('Are you sure you want to delete this entry?')) return
+  function handleDelete() {
+    if (!confirm('Jesi li siguran/a da želiš obrisati ovaj unos?')) return
     setDeleting(true)
-    await supabase.from('mood_entries').delete().eq('id', entryId)
+    deleteEntry(entryId)
     router.push('/history')
   }
 

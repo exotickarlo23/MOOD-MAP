@@ -1,11 +1,26 @@
-import { getAllEntries } from '@/lib/queries'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { getAllEntries, type MoodEntry } from '@/lib/moodStorage'
 import EntryCard from '@/components/EntryCard'
 import LazyMoodChart from '@/components/LazyMoodChart'
 
-export const dynamic = 'force-dynamic'
+export default function HistoryPage() {
+  const [entries, setEntries] = useState<MoodEntry[]>([])
+  const [loading, setLoading] = useState(true)
 
-export default async function HistoryPage() {
-  const entries = await getAllEntries(50)
+  useEffect(() => {
+    setEntries(getAllEntries(50))
+    setLoading(false)
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-8 flex items-center justify-center min-h-[60vh]">
+        <div className="w-8 h-8 border-3 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-md mx-auto px-4 pt-6 pb-4">
